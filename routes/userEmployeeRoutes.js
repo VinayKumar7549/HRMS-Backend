@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const { User } = require('../models/UserEmployee');
+const jwt = require('jsonwebtoken');
 
 // Route to handle user signup
 router.post('/signup', async (req, res) => {
@@ -83,5 +84,40 @@ router.get('/users', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
+
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not defined');
+      return res.status(500).json({ message: 'Server error: JWT secret not set' });
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '1h',
+    });
+
+    res.status(200).json({ token });
+  } catch (error) {
+    console.error('Error in /login route:', error); // Log the error
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 module.exports = router;
