@@ -10,11 +10,6 @@ router.post('/signup', async (req, res) => {
   const { username, role, email, password } = req.body;
 
   try {
-    // // Validate role
-    // const validRoles = ['Employee', 'Admin', 'Manager'];
-    // if (!validRoles.includes(role.toLowerCase())) {
-    //   return res.status(400).json({ error: `Invalid role. Role must be one of: ${validRoles.join(', ')}` });
-    // }
 
     // Check if the user already exists
     const existingUser = await User.findOne({ email });
@@ -35,6 +30,13 @@ router.post('/signup', async (req, res) => {
 
     // Save the user to the database
     await newUser.save();
+
+    res.json({
+      error: false,
+      newUser,
+      accessToken,
+      message: "Registration Successful"
+  });
 
     // Configure Nodemailer transporter
     const transporter = nodemailer.createTransport({
